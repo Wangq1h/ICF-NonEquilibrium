@@ -184,14 +184,14 @@ def model(y, t):
 
 
 # Simulate the model
-def Simulate(f,c):
+def Simulate(f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062, plot= True):
     colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'orange', 'purple']
     # Set up the initial conditions
     Th0 = 8*11604525.0062 
     Ti0 = Th0*f # keV
     Te0 = Th0*(2-f) # keV
     rho0 = 120*10**3 # g/cm^3
-    Rh0 = 30*10**(-6) # cm
+    Rh0 = 30*10**(-6) # cm rho0*rh0=3.6
     y0 = [Te0, Ti0, rho0, Rh0]
     t = np.linspace(0, 50*10**(-12), 10000)
     # Y0 = [Te0, Ti0, rho0, Rh0]
@@ -237,26 +237,30 @@ def Simulate(f,c):
         Wme.append(np.abs(info[4]))
         Wmi.append(np.abs(info[5]))
         # print(Walpha)
+    if not plot:
+        if y[-1,0]>=y[0,0] and y[-1,1]>=y[0,1]:
+            return True
+    
     # 创建第一个子图，绘制 Walpha 和 Wie
-    
-    ax1.plot(t, Walpha, label='Walpha,f='+str(f),linestyle=c,color=colors[0])
-    ax1.plot(t, Wie, label='Wie,f='+str(f),linestyle=c,color=colors[1])
-    ax1.plot(t, Wr, label='Wr,f='+str(f),linestyle=c,color=colors[2])
-    ax1.plot(t, We, label='We,f='+str(f),linestyle=c,color=colors[3])
-    ax1.plot(t, Wme, label='Wme,f='+str(f),linestyle=c,color=colors[4])
-    ax1.plot(t, Wmi, label='Wmi,f='+str(f),linestyle=c,color=colors[5])
-    ax1.set_xlabel('Time (ps)')
-    ax1.set_ylabel('Walpha, Wie')
-    ax1.set_yscale('log')
+    if plot:
+        ax1.plot(t, Walpha, label='Walpha,f='+str(f),linestyle=c,color=colors[0])
+        ax1.plot(t, Wie, label='Wie,f='+str(f),linestyle=c,color=colors[1])
+        ax1.plot(t, Wr, label='Wr,f='+str(f),linestyle=c,color=colors[2])
+        ax1.plot(t, We, label='We,f='+str(f),linestyle=c,color=colors[3])
+        ax1.plot(t, Wme, label='Wme,f='+str(f),linestyle=c,color=colors[4])
+        ax1.plot(t, Wmi, label='Wmi,f='+str(f),linestyle=c,color=colors[5])
+        ax1.set_xlabel('Time (ps)')
+        ax1.set_ylabel('Walpha, Wie')
+        ax1.set_yscale('log')
 
-    # 创建第二个子图，共享 x 轴，绘制 Ti/Te
-    
-    # ax2.plot(t, y[:,0], label='Te,f='+str(f),linestyle=c,color=colors[6])
-    # ax2.plot(t, y[:,1], label='Ti,f='+str(f),linestyle=c,color=colors[7])
-    # ax2.plot(t, y[:,2], label='rho,f='+str(f),linestyle=c,color=colors[8])
-    ax2.plot(t, y[:,3], label='Rh,f='+str(f),linestyle=c,color=colors[6])
-    # ax2.set_ylabel('Ti/Te')
-    # ax2.set_yscale('log')
+        # 创建第二个子图，共享 x 轴，绘制 Ti/Te
+        
+        # ax2.plot(t, y[:,0], label='Te,f='+str(f),linestyle=c,color=colors[6])
+        # ax2.plot(t, y[:,1], label='Ti,f='+str(f),linestyle=c,color=colors[7])
+        # ax2.plot(t, y[:,2], label='rho,f='+str(f),linestyle=c,color=colors[8])
+        ax2.plot(t, y[:,3], label='Rh,f='+str(f),linestyle=c,color=colors[6])
+        # ax2.set_ylabel('Ti/Te')
+        # ax2.set_yscale('log')
 
     # 显示图例
     
@@ -280,15 +284,26 @@ def Simulate(f,c):
     # plt.show()
 
 # Plot the results
-with plt.style.context('science'):
-    fig, ax1 = plt.subplots()
-    ax2 = ax1.twinx()
-    Simulate(0.8,'-')
-    Simulate(1,'--')
-    Simulate(1.2,':')
-    fig.legend(loc='upper right')
-    # if cut_off>0:
-    #         plt.annotate( 'coulomb logarithm is cut off at '+str(cut_off),xy=(0, 1), xycoords='axes fraction',xytext=(0.03, 0.8),fontsize=7)
-    # else:
-    #         plt.annotate( 'coulomb logarithm is not cut off ',xy=(0, 1), xycoords='axes fraction',xytext=(0.03, 0.8),fontsize=7)
-    plt.show()
+def Plot(f1=0.8,f2=1.0,f3=1.2):
+    with plt.style.context('science'):
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+        Simulate(f1,'-')
+        Simulate(f2,'--')
+        Simulate(f3,':')
+        fig.legend(loc='upper right')
+        # if cut_off>0:
+        #         plt.annotate( 'coulomb logarithm is cut off at '+str(cut_off),xy=(0, 1), xycoords='axes fraction',xytext=(0.03, 0.8),fontsize=7)
+        # else:
+        #         plt.annotate( 'coulomb logarithm is not cut off ',xy=(0, 1), xycoords='axes fraction',xytext=(0.03, 0.8),fontsize=7)
+        plt.show()
+
+def Scan(RhohRh, Th, f):
+    Ignit_success = []
+    for rhohrh in RhohRh:
+        for th in Th:
+            for rh in np.linspace(1/100*rhohrh, rhohrh, 100):
+                if Simulate(f, 'k', rhohrh/rh, rh, th, plot=False):
+                    Ignit_success.append([rhohrh, th])
+                    break
+            
