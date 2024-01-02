@@ -8,6 +8,9 @@ import sys
 # import threading
 from tqdm import tqdm
 import time
+import matplotlib.ticker as ticker
+
+
 # Define the constants
 # All in SI units
 A_alpha = 8e39 
@@ -105,8 +108,9 @@ def P_i(Ti, rho):
     return ni*kB*Ti
 
 def Uh(Te, Ti, rho):
-    th = Th(Te,Ti)
-    return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
+    # th = Th(Te,Ti)
+    # return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
+    return 
 
 def W_mi(Te, Ti, rho, Rh):
     uh = Uh(Te, Ti, rho)
@@ -196,7 +200,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
     # rho0 = 120*10**3 # g/cm^3
     # Rh0 = 30*10**(-6) # cm rho0*rh0=3.6
     y0 = [Te0, Ti0, rho0, Rh0]
-    t = np.linspace(0, 20*10**(-12), 10000)
+    t = np.linspace(0, 20*10**(-12), 1000)
     # Y0 = [Te0, Ti0, rho0, Rh0]
     # tt = t[1]-t[0]
     # Y =[]
@@ -241,35 +245,59 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
         Wmi.append(np.abs(info[5]))
         # print(Walpha)
     if not plot:
-        if Y[-1,1]>Y[0,1]:
-            for i in range(len(t)):
-                th = Th(Y[i,0],Y[i,1])
-                rhoh = Y[i,2]
-                rh = Y[i,3]
-                if Lawson(th, rhoh, rh):
-                    return True
+        if Y[-1,0]>Y[0,0]:
+            sample_Te = []
+            sample_Ti = []
+            T = []
+            for index in range(len(t)):
+                if t[index]>10:
+                    T.append(t[index])
+                    sample_Te.append(y[index,0])
+                    sample_Ti.append(y[index,1])
+            first_derivative_e = np.gradient(sample_Te, T)
+            second_derivative_e = np.gradient(first_derivative_e, T)
+            first_derivative_i = np.gradient(sample_Ti, T)
+            second_derivative_i = np.gradient(first_derivative_i, T)
+            count = 0
+            for value in second_derivative_i:
+                if value > 0:
+                    count += 1
+                    if count >= 100:
+                        return True
+                else:
+                    count = 0
         return False
+
     
     # 创建第一个子图，绘制 Walpha 和 Wie
     if plot:
-        ax1.plot(t, Walpha, label='Walpha,f='+str(f),linestyle=c,color=colors[0])
-        ax1.plot(t, Wie, label='Wie,f='+str(f),linestyle=c,color=colors[1])
-        ax1.plot(t, Wr, label='Wr,f='+str(f),linestyle=c,color=colors[2])
-        ax1.plot(t, We, label='We,f='+str(f),linestyle=c,color=colors[3])
-        ax1.plot(t, Wme, label='Wme,f='+str(f),linestyle=c,color=colors[4])
-        ax1.plot(t, Wmi, label='Wmi,f='+str(f),linestyle=c,color=colors[5])
-        ax1.set_xlabel('Time (ps)')
-        ax1.set_ylabel('Walpha, Wie')
-        ax1.set_yscale('log')
+        # ax1.plot(t, Walpha, label='Walpha,f='+str(f),linestyle=c,color=colors[0])
+        # # ax1.plot(t, Wie, label='Wie,f='+str(f),linestyle=c,color=colors[1])
+        # # ax1.plot(t, Wr, label='Wr,f='+str(f),linestyle=c,color=colors[2])
+        # # ax1.plot(t, We, label='We,f='+str(f),linestyle=c,color=colors[3])
+        # # ax1.plot(t, Wme, label='Wme,f='+str(f),linestyle=c,color=colors[4])
+        # # ax1.plot(t, Wmi, label='Wmi,f='+str(f),linestyle=c,color=colors[5])
+        # ax1.set_xlabel('Time (ps)')
+        # # ax1.set_ylabel('Walpha, Wie')
+        # ax1.set_yscale('log')
+        # # ax1.xaxis.set_major_locator(ticker.MaxNLocator(4))  # 限制x轴刻度的数量
+        # # ax1.yaxis.set_major_locator(ticker.MaxNLocator(3))  # 限制y轴刻度的数量
+        # # ax1.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: '{:.1e}'.format(x)))  # 设置x轴刻度标签的格式
+        # # ax1.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: '{:.1e}'.format(x)))  # 设置y轴刻度标签的格式
+        # ax1.yaxis.set_ticklabels([])  # 隐藏y轴刻度标签
 
         # 创建第二个子图，共享 x 轴，绘制 Ti/Te
         
-        # ax2.plot(t, y[:,0], label='Te,f='+str(f),linestyle=c,color=colors[6])
-        # ax2.plot(t, y[:,1], label='Ti,f='+str(f),linestyle=c,color=colors[7])
+        ax2.plot(t, y[:,0], label='Te,f='+str(f),linestyle=c,color=colors[6])
+        ax2.plot(t, y[:,1], label='Ti,f='+str(f),linestyle=c,color=colors[7])
         # ax2.plot(t, y[:,2], label='rho,f='+str(f),linestyle=c,color=colors[8])
-        ax2.plot(t, y[:,3], label='Rh,f='+str(f),linestyle=c,color=colors[6])
-        # ax2.set_ylabel('Ti/Te')
+        # ax2.plot(t, y[:,3], label='Rh,f='+str(f),linestyle=c,color=colors[6])
+        ax2.set_ylabel('Ti/Te')
         # ax2.set_yscale('log')
+        # ax2.xaxis.set_major_locator(ticker.MaxNLocator(4))  # 限制x轴刻度的数量
+        # ax2.yaxis.set_major_locator(ticker.MaxNLocator(3))  # 限制y轴刻度的数量
+        # ax2.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: '{:.1e}'.format(x)))  # 设置x轴刻度标签的格式
+        # ax2.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: '{:.1e}'.format(x)))  # 设置y轴刻度标签的格式
 
     # 显示图例
     
@@ -296,7 +324,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
 def Lawson(th, rhoh, rh):
     # print(th, rhoh, rh)
     lhs = rhoh/(10**3)*rh*100*th/11604525.0062
-    if lhs>28:
+    if lhs>10:
         rhs = (1.1*np.sqrt(th/11604525.0062))/(1-3.47*(th/11604525.0062)**(-3/2))*np.sqrt(rhoh/Rhoc)
     else:
         rhs = 6*np.sqrt(rhoh/Rhoc)
@@ -345,7 +373,7 @@ def Scan(RhohRh, Th, f):
     for rhohrh in RhohRh:
         pbar.update(1)
         for th in Th:
-            for rh in np.linspace(10**(-6), 10**(-4), 100):
+            for rh in np.linspace(10**(-5), 10**(-4), 10):
                 if Precheck(th, rhohrh/rh, rh):
                     # print("precheck pass")
                     if Simulate(ax1 ,ax2 ,f, 'k', rhohrh/rh, rh, th, plot=False):
@@ -367,31 +395,22 @@ def Scan(RhohRh, Th, f):
     plt.plot([i[0] for i in Ignit_success], [i[1] for i in Ignit_success], 'o')
     plt.show()
 
-# def task(params,f):
-#     ax1 = 1
-#     ax2 = 2
-#     rhohrh, th = params
-#     for rh in np.linspace(1/100*rhohrh, rhohrh, 100):
-#         if Simulate(ax1 ,ax2 ,f, 'k', rhohrh/rh, rh, th, plot=False):
-#             return [rhohrh, th]
-
-# def Scan(RhohRh, Th, f):
-#     ax1 = 1
-#     ax2 = 2
-#     Ignit_success = []
-#     with Pool() as pool:
-#         params = [(rhohrh, th) for rhohrh in RhohRh for th in Th]
-#         results = [pool.apply_async(task, (p, f), error_callback=print) for p in params]
-#         for result in results:
-#             try:
-#                 res = result.get(timeout=5)  # Wait for 5 seconds
-#                 if res is not None:
-#                     Ignit_success.append(res)
-#             except multiprocessing.TimeoutError:
-#                 print("A task timed out.")
-#     plt.plot([i[0] for i in Ignit_success], [i[1] for i in Ignit_success], 'o')
-#     plt.show()
+def Insight(th, rhohrh,f):
+    fig, axs = plt.subplots(2, 5, figsize=(15, 6))  # 创建一个2行5列的子图网格
+    axs = axs.flatten()  # 将子图网格转换为一维数组，以便我们可以在循环中使用它
+    total = 10
+    pbar = tqdm(total=total, desc="Processing", ncols=80)
+    for i, rh in enumerate(np.linspace(10**(-6), 10**(-4), total)):
+        pbar.update(1)
+        ax1 = axs[i]
+        ax2 = ax1.twinx()
+        Simulate(ax1, ax2,f,'-', rhohrh/rh, rh, th, plot=True)
+        ax1.set_title(f'rho: {rhohrh/rh/1000:.1f}g/cm$^3$, rh: {rh*1e6:.1f}$\mu$ m\n th: {th/11604525.0062:.1f}keV, rhohrh: {rhohrh/10:.1f}g/cm$^2$')  # 设置子图的标题
+    fig.legend(bbox_to_anchor=(0.5, -0.05), loc='upper center', ncol=5)  # 创建图例
+    plt.tight_layout()  # 调整子图的位置，以确保它们不会重叠
+    plt.show()
             
-# Plot()
-np.seterr(all='ignore')
-Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 100), np.linspace(1*11604525.0062, 30*11604525.0062, 100), 1.2)
+Plot()
+# np.seterr(all='ignore')
+# Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 10), np.linspace(1*11604525.0062, 30*11604525.0062, 10), 0.8)
+# Insight(6*11604525.0062, 1.4*10,1.2)
