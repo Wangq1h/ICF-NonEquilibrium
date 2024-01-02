@@ -3,8 +3,11 @@ from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 import scienceplots
 import sys
-
-
+# import multiprocessing
+# from multiprocessing import Pool
+# import threading
+from tqdm import tqdm
+import time
 # Define the constants
 # All in SI units
 A_alpha = 8e39 
@@ -177,23 +180,23 @@ def model(y, t):
         print("Rh is nan")
         sys.exit()
     gamma = -dydt2/dydt1
-    if t==0:
-        print("gamma is", gamma)
+    # if t==0:
+        # print("gamma is", gamma)
     # print(dydt1, dydt2, dydt3, dydt4)
     return [dydt1, dydt2, dydt3, dydt4]
 
 
 # Simulate the model
-def Simulate(f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062, plot= True):
+def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062, plot= True):
     colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'orange', 'purple']
     # Set up the initial conditions
-    Th0 = 8*11604525.0062 
+    # Th0 = 8*11604525.0062 
     Ti0 = Th0*f # keV
     Te0 = Th0*(2-f) # keV
-    rho0 = 120*10**3 # g/cm^3
-    Rh0 = 30*10**(-6) # cm rho0*rh0=3.6
+    # rho0 = 120*10**3 # g/cm^3
+    # Rh0 = 30*10**(-6) # cm rho0*rh0=3.6
     y0 = [Te0, Ti0, rho0, Rh0]
-    t = np.linspace(0, 50*10**(-12), 10000)
+    t = np.linspace(0, 20*10**(-12), 10000)
     # Y0 = [Te0, Ti0, rho0, Rh0]
     # tt = t[1]-t[0]
     # Y =[]
@@ -238,8 +241,14 @@ def Simulate(f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062, plot= Tr
         Wmi.append(np.abs(info[5]))
         # print(Walpha)
     if not plot:
-        if y[-1,0]>=y[0,0] and y[-1,1]>=y[0,1]:
-            return True
+        if Y[-1,1]>Y[0,1]:
+            for i in range(len(t)):
+                th = Th(Y[i,0],Y[i,1])
+                rhoh = Y[i,2]
+                rh = Y[i,3]
+                if Lawson(th, rhoh, rh):
+                    return True
+        return False
     
     # 创建第一个子图，绘制 Walpha 和 Wie
     if plot:
@@ -283,14 +292,39 @@ def Simulate(f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062, plot= Tr
     # plt.yscale('log')
     # plt.show()
 
+#Lawson Criterion
+def Lawson(th, rhoh, rh):
+    # print(th, rhoh, rh)
+    lhs = rhoh/(10**3)*rh*100*th/11604525.0062
+    if lhs>28:
+        rhs = (1.1*np.sqrt(th/11604525.0062))/(1-3.47*(th/11604525.0062)**(-3/2))*np.sqrt(rhoh/Rhoc)
+    else:
+        rhs = 6*np.sqrt(rhoh/Rhoc)
+    # print(lhs, rhs)
+    # input("Press Enter to continue...")
+    # rhs = 6*np.sqrt(rhoh/Rhoc)
+    if lhs>rhs:
+        return True
+    return False
+
+def Precheck(th, rhoh, rh):
+    lhs = rhoh/(10**3)*rh*100*th/11604525.0062
+    if th>28*11604525.0062:
+        rhs = (1.1*np.sqrt(th/11604525.0062))/(1-3.47*(th/11604525.0062)**(-3/2))*np.sqrt(rhoh/Rhoc)
+    else:
+        rhs = 6*np.sqrt(rhoh/Rhoc)
+    if lhs>1/5*rhs:
+        return True
+    return False
+
 # Plot the results
 def Plot(f1=0.8,f2=1.0,f3=1.2):
     with plt.style.context('science'):
         fig, ax1 = plt.subplots()
         ax2 = ax1.twinx()
-        Simulate(f1,'-')
-        Simulate(f2,'--')
-        Simulate(f3,':')
+        Simulate(ax1, ax2, f1,'-')
+        Simulate(ax1, ax2, f2,'--')
+        Simulate(ax1, ax2, f3,':')
         fig.legend(loc='upper right')
         # if cut_off>0:
         #         plt.annotate( 'coulomb logarithm is cut off at '+str(cut_off),xy=(0, 1), xycoords='axes fraction',xytext=(0.03, 0.8),fontsize=7)
@@ -299,11 +333,65 @@ def Plot(f1=0.8,f2=1.0,f3=1.2):
         plt.show()
 
 def Scan(RhohRh, Th, f):
+    ax1 = 1
+    ax2 = 2
     Ignit_success = []
+    is_find = False
+    
+    total = len(RhohRh)
+    pbar = tqdm(total=total, desc="Processing", ncols=80)
+    # plt.figure()  # Create a new figure
+    # plt.ion()  # Turn on interactive mode
     for rhohrh in RhohRh:
+        pbar.update(1)
         for th in Th:
-            for rh in np.linspace(1/100*rhohrh, rhohrh, 100):
-                if Simulate(f, 'k', rhohrh/rh, rh, th, plot=False):
-                    Ignit_success.append([rhohrh, th])
-                    break
+            for rh in np.linspace(10**(-6), 10**(-4), 100):
+                if Precheck(th, rhohrh/rh, rh):
+                    # print("precheck pass")
+                    if Simulate(ax1 ,ax2 ,f, 'k', rhohrh/rh, rh, th, plot=False):
+                        Ignit_success.append([rhohrh/10, th/11604525.0062])
+                        is_find = True
+                        break
+            if is_find:
+                # print("find one")
+                break
+            # print([rhohrh/10, th/11604525.0062])
             
+            # Update the plot
+            # plt.scatter(rhohrh, th)
+            # plt.draw()
+            # plt.pause(0.01)  # Pause to allow the plot to update  # Pause to allow the plot to update
+        # if not is_find:
+        #     print("not find one")
+        is_find = False
+    plt.plot([i[0] for i in Ignit_success], [i[1] for i in Ignit_success], 'o')
+    plt.show()
+
+# def task(params,f):
+#     ax1 = 1
+#     ax2 = 2
+#     rhohrh, th = params
+#     for rh in np.linspace(1/100*rhohrh, rhohrh, 100):
+#         if Simulate(ax1 ,ax2 ,f, 'k', rhohrh/rh, rh, th, plot=False):
+#             return [rhohrh, th]
+
+# def Scan(RhohRh, Th, f):
+#     ax1 = 1
+#     ax2 = 2
+#     Ignit_success = []
+#     with Pool() as pool:
+#         params = [(rhohrh, th) for rhohrh in RhohRh for th in Th]
+#         results = [pool.apply_async(task, (p, f), error_callback=print) for p in params]
+#         for result in results:
+#             try:
+#                 res = result.get(timeout=5)  # Wait for 5 seconds
+#                 if res is not None:
+#                     Ignit_success.append(res)
+#             except multiprocessing.TimeoutError:
+#                 print("A task timed out.")
+#     plt.plot([i[0] for i in Ignit_success], [i[1] for i in Ignit_success], 'o')
+#     plt.show()
+            
+# Plot()
+np.seterr(all='ignore')
+Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 100), np.linspace(1*11604525.0062, 30*11604525.0062, 100), 1.2)
