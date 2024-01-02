@@ -108,9 +108,9 @@ def P_i(Ti, rho):
     return ni*kB*Ti
 
 def Uh(Te, Ti, rho):
-    # th = Th(Te,Ti)
-    # return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
-    return 
+    th = Th(Te,Ti)
+    return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
+    # return 
 
 def W_mi(Te, Ti, rho, Rh):
     uh = Uh(Te, Ti, rho)
@@ -165,7 +165,7 @@ def model(y, t):
     vh = Vh(y[3])
     uh = Uh(y[0],y[1],y[2])
     # print(Walpha, falpha, Wme, Wmi, We)#, Wr, Wie, falphai, falphae, vh, uh)
-    dydt2 = 1/(Cvi*Rhoi(y[2]))*(Walpha*falphai-Wie-Wmi)
+    dydt2 = 1/(2*Cvi*Rhoi(y[2]))*(Walpha*falphai-Wie-Wmi)
     dydt1 = 1/(Cve*Rhoe(y[2]))*(Walpha*falphae+Wie-Wme-Wr-We)
     # dydt2 = 1/(Cvi*y[2])*(Walpha*falphai-Wie-Wmi)
     # dydt1 = 1/(Cve*y[2])*(Walpha*falphae+Wie-Wme-Wr-We)
@@ -200,7 +200,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
     # rho0 = 120*10**3 # g/cm^3
     # Rh0 = 30*10**(-6) # cm rho0*rh0=3.6
     y0 = [Te0, Ti0, rho0, Rh0]
-    t = np.linspace(0, 20*10**(-12), 1000)
+    t = np.linspace(0, 50*10**(-12), 1000)
     # Y0 = [Te0, Ti0, rho0, Rh0]
     # tt = t[1]-t[0]
     # Y =[]
@@ -410,7 +410,7 @@ def Insight(th, rhohrh,f):
     plt.tight_layout()  # 调整子图的位置，以确保它们不会重叠
     plt.show()
             
-Plot()
-# np.seterr(all='ignore')
-# Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 10), np.linspace(1*11604525.0062, 30*11604525.0062, 10), 0.8)
+# Plot()
+np.seterr(all='ignore')
+Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 10), np.linspace(1*11604525.0062, 30*11604525.0062, 10), 0.8)
 # Insight(6*11604525.0062, 1.4*10,1.2)
