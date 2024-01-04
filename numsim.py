@@ -108,9 +108,9 @@ def P_i(Ti, rho):
     return ni*kB*Ti
 
 def Uh(Te, Ti, rho):
-    th = Th(Te,Ti)
-    return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
-    # return 
+    # th = Th(Te,Ti)
+    # return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
+    return 0
 
 def W_mi(Te, Ti, rho, Rh):
     uh = Uh(Te, Ti, rho)
@@ -200,7 +200,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
     # rho0 = 120*10**3 # g/cm^3
     # Rh0 = 30*10**(-6) # cm rho0*rh0=3.6
     y0 = [Te0, Ti0, rho0, Rh0]
-    t = np.linspace(0, 50*10**(-12), 1000)
+    t = np.linspace(0, 25*10**(-12), 1000)
     # Y0 = [Te0, Ti0, rho0, Rh0]
     # tt = t[1]-t[0]
     # Y =[]
@@ -411,6 +411,6 @@ def Insight(th, rhohrh,f):
     plt.show()
             
 # Plot()
-np.seterr(all='ignore')
-Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 10), np.linspace(1*11604525.0062, 30*11604525.0062, 10), 0.8)
+# np.seterr(all='ignore')
+# Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 10), np.linspace(1*11604525.0062, 30*11604525.0062, 10), 0.8)
 # Insight(6*11604525.0062, 1.4*10,1.2)
