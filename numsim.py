@@ -452,6 +452,9 @@ def Scan(RhohRh, Th, f):
         # if not is_find:
         #     print("not find one")
         is_find = False
+    with open('Ignit_success.txt', 'w') as file:
+        for item in Ignit_success:
+            file.write(f'{item[0]}, {item[1]}\n')
     plt.plot([i[0] for i in Ignit_success], [i[1] for i in Ignit_success], 'o')
     plt.show()
 
@@ -477,5 +480,5 @@ def Insight(th, rhohrh,f):
 isobaric = True
 # Plot()
 # np.seterr(all='ignore')
-# Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 100), np.linspace(1*11604525.0062, 30*11604525.0062, 100), 1)
-Insight(5.4*11604525.0062, 0.1*10,0.8)
+Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 100), np.linspace(1*11604525.0062, 30*11604525.0062, 1000), 1)
+# Insight(5.4*11604525.0062, 0.1*10,0.8)
