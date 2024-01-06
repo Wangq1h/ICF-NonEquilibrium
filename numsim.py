@@ -9,7 +9,10 @@ import sys
 from tqdm import tqdm
 import time
 import matplotlib.ticker as ticker
+# import warnings
 
+# # 将运行时警告转换为错误
+# warnings.filterwarnings('error', category=RuntimeWarning)
 
 # Define the constants
 # All in SI units
@@ -108,9 +111,13 @@ def P_i(Ti, rho):
     return ni*kB*Ti
 
 def Uh(Te, Ti, rho):
+    if isobaric:
+        return 0
+    if not isobaric:
+        th = Th(Te,Ti)
+        return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
     # th = Th(Te,Ti)
     # return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
-    return 0
 
 def W_mi(Te, Ti, rho, Rh):
     uh = Uh(Te, Ti, rho)
@@ -197,6 +204,8 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
     # Th0 = 8*11604525.0062 
     Ti0 = Th0*f # keV
     Te0 = Th0*(2-f) # keV
+    if not isobaric:
+        rho0 = Rhoc
     # rho0 = 120*10**3 # g/cm^3
     # Rh0 = 30*10**(-6) # cm rho0*rh0=3.6
     y0 = [Te0, Ti0, rho0, Rh0]
@@ -245,32 +254,12 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
         Wmi.append(np.abs(info[5]))
         # print(Walpha)
     if not plot:
-        if Y[-1,0]>Y[0,0]:
-            sample_Te = []
-            sample_Ti = []
-            T = []
-            for index in range(len(t)):
-                if t[index]>10:
-                    T.append(t[index])
-                    sample_Te.append(y[index,0])
-                    sample_Ti.append(y[index,1])
-            first_derivative_e = np.gradient(sample_Te, T)
-            second_derivative_e = np.gradient(first_derivative_e, T)
-            first_derivative_i = np.gradient(sample_Ti, T)
-            second_derivative_i = np.gradient(first_derivative_i, T)
-            count = 0
-            for value in second_derivative_i:
-                if value > 0:
-                    count += 1
-                    if count >= 100:
-                        return True
-                else:
-                    count = 0
-        return False
+        return Is_ignite(Y)
 
     
     # 创建第一个子图，绘制 Walpha 和 Wie
     if plot:
+        # print(max(max_derivative_change(Y[:,0]), max_derivative_change(Y[:,1]), max_derivative_change(Y[:,2]), max_derivative_change(Y[:,3])))
         # ax1.plot(t, Walpha, label='Walpha,f='+str(f),linestyle=c,color=colors[0])
         # # ax1.plot(t, Wie, label='Wie,f='+str(f),linestyle=c,color=colors[1])
         # # ax1.plot(t, Wr, label='Wr,f='+str(f),linestyle=c,color=colors[2])
@@ -345,6 +334,71 @@ def Precheck(th, rhoh, rh):
         return True
     return False
 
+def Is_smooth(points, threshold=1):
+    # 计算点的导数
+    derivatives = np.gradient(points)
+    A = np.trapz(derivatives)
+    derivatives = derivatives/A
+    # 计算导数的变化
+    changes = np.abs(np.diff(derivatives))
+    # print(max(changes))
+    # 如果导数的任何连续变化大于阈值，则认为曲线不平滑
+    if np.isnan(changes).any():
+        return False
+    else:
+        if np.any(changes > threshold):
+            return False
+        else:
+            return True
+
+def max_derivative_change(points):
+    # 计算点的导数
+    derivatives = np.gradient(points)
+    # 归一化
+    A = np.trapz(derivatives)
+    derivatives = derivatives/A
+
+    # 计算导数的变化
+    changes = np.abs(np.diff(derivatives))
+    
+    # 返回导数变化的最大值
+    return np.max(changes)
+
+def Is_ignite(Y):
+    Temp_up = False
+    Smooth = True
+    for i in range(2):
+        if not Is_smooth(Y[:,i]):
+            Smooth = False
+        if Y[-1,i]>5*11604525.0062:
+            if Y[-1,i]>Y[-2,i] or np.abs(Y[-1,i]-Y[-2,i])/Y[-1,i]<0.01:
+                Temp_up = True
+    # print(Temp_up, Smooth)
+    if Temp_up and Smooth:
+        delta_T = [np.abs(Y[i,0]-Y[i,1]) for i in range(len(Y[:,0]))]
+        min_value = min(delta_T)
+        equibllrium = delta_T.index(min_value)
+        sample_Te = [Y[i+equibllrium,0] for i in range(len(Y[:,0])-equibllrium)]
+        sample_Ti = [Y[i+equibllrium,1] for i in range(len(Y[:,1])-equibllrium)]
+        if len(sample_Te)<5 or len(sample_Ti)<5:
+            return False
+        first_derivative_e = np.gradient(sample_Te)
+        second_derivative_e = np.gradient(first_derivative_e)
+        first_derivative_i = np.gradient(sample_Ti)
+        second_derivative_i = np.gradient(first_derivative_i)
+        count = 0
+        for value in second_derivative_i:
+            if value > 0:
+                count += 1
+                if count >= 5:
+                    return True
+            else:
+                count = 0
+        return False
+    else:
+        return False
+    
+
 # Plot the results
 def Plot(f1=0.8,f2=1.0,f3=1.2):
     with plt.style.context('science'):
@@ -373,10 +427,16 @@ def Scan(RhohRh, Th, f):
     for rhohrh in RhohRh:
         pbar.update(1)
         for th in Th:
-            for rh in np.linspace(10**(-5), 10**(-4), 10):
-                if Precheck(th, rhohrh/rh, rh):
-                    # print("precheck pass")
-                    if Simulate(ax1 ,ax2 ,f, 'k', rhohrh/rh, rh, th, plot=False):
+            if isobaric:
+                for rh in np.linspace(10**(-5), 10**(-4), 10):
+                    if rhohrh/10*th/11604525.0062>0.5:
+                        if Simulate(ax1 ,ax2 ,f, 'k', rhohrh/rh, rh, th, plot=False):
+                            Ignit_success.append([rhohrh/10, th/11604525.0062])
+                            is_find = True
+                            break
+            else:
+                if rhohrh/10*th/11604525.0062>0.5:
+                    if Simulate(ax1 ,ax2 ,f, 'k', Rhoc, rhohrh/Rhoc, th, plot=False):
                         Ignit_success.append([rhohrh/10, th/11604525.0062])
                         is_find = True
                         break
@@ -404,13 +464,18 @@ def Insight(th, rhohrh,f):
         pbar.update(1)
         ax1 = axs[i]
         ax2 = ax1.twinx()
-        Simulate(ax1, ax2,f,'-', rhohrh/rh, rh, th, plot=True)
+        if isobaric:
+            Simulate(ax1, ax2,f,'-', rhohrh/rh, rh, th, plot=True)
+        else:
+            Simulate(ax1, ax2,f,'-', Rhoc, rhohrh/Rhoc, th, plot=True)
         ax1.set_title(f'rho: {rhohrh/rh/1000:.1f}g/cm$^3$, rh: {rh*1e6:.1f}$\mu$ m\n th: {th/11604525.0062:.1f}keV, rhohrh: {rhohrh/10:.1f}g/cm$^2$')  # 设置子图的标题
     fig.legend(bbox_to_anchor=(0.5, -0.05), loc='upper center', ncol=5)  # 创建图例
     plt.tight_layout()  # 调整子图的位置，以确保它们不会重叠
     plt.show()
             
+
+isobaric = True
 # Plot()
 # np.seterr(all='ignore')
-# Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 10), np.linspace(1*11604525.0062, 30*11604525.0062, 10), 0.8)
-# Insight(6*11604525.0062, 1.4*10,1.2)
+# Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 100), np.linspace(1*11604525.0062, 30*11604525.0062, 100), 1)
+Insight(5.4*11604525.0062, 0.1*10,0.8)
