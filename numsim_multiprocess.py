@@ -477,13 +477,13 @@ def Scan(RhohRh, Th, f):
             for th in Th:
                 # num_process += 1
                 if isobaric:
-                    for rh in np.linspace(10**(-6), 10**(-5), 10):
+                    for rh in np.linspace(10**(-6), 10**(-4), 20):
                         if rhohrh/10*th/11604525.0062>0.5:
                             future = executor.submit(simulate_wrapper, (ax1, ax2, f, rhohrh, rh, th))
                             futures.append(future)
                 else:
                     if rhohrh/10*th/11604525.0062>0.5:
-                        future = executor.submit(simulate_wrapper, (ax1, ax2, f, Rhoc, rhohrh/Rhoc, th))
+                        future = executor.submit(simulate_wrapper, (ax1, ax2, f, rhohrh, rhohrh/Rhoc, th))
                         futures.append(future)
                 # if num_process%10==0:
                 for future in as_completed(futures):
@@ -498,13 +498,13 @@ def Scan(RhohRh, Th, f):
                 if is_find:
                     break
         print("Simulation finished")
-    with open('Ignit_success.txt', 'w') as file:
+    with open(str(isobaric)+'Ignit_success_f='+str(f)+'.txt', 'w') as file:
         for item in Ignit_success:
             file.write(f'{item[0]}, {item[1]}\n')
     print("Waiting for all processes to finish...")
 
-    plt.plot([i[0] for i in Ignit_success], [i[1] for i in Ignit_success], 'o')
-    plt.show()
+    # plt.plot([i[0] for i in Ignit_success], [i[1] for i in Ignit_success], 'o')
+    # plt.show()
 
 def Insight(th, rhohrh,f):
     fig, axs = plt.subplots(2, 5, figsize=(15, 6))  # 创建一个2行5列的子图网格
@@ -530,7 +530,15 @@ isobaric = True
 # np.seterr(all='ignore')
 def main():
     # 这里是你的主程序
-    Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 10), np.linspace(1*11604525.0062, 10*11604525.0062, 100), 1)
+    global isobaric
+    isobaric = True
+    # Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 1000), 0.8)
+    # Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1)
+    # Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1.2)
+    isobaric = False
+    Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 0.8)
+    Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1)
+    Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1.2)
 
 if __name__ == '__main__':
     main()

@@ -477,8 +477,8 @@ def Insight(th, rhohrh,f):
     plt.show()
             
 
-isobaric = True
+isobaric = False
 # Plot()
 # np.seterr(all='ignore')
-Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 100), np.linspace(1*11604525.0062, 30*11604525.0062, 1000), 1)
-# Insight(5.4*11604525.0062, 0.1*10,0.8)
+# Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 100), np.linspace(1*11604525.0062, 30*11604525.0062, 1000), 1)
+Insight(20*11604525.0062, 1.5*10,0.8)
