@@ -291,7 +291,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
         # ax2.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: '{:.1e}'.format(x)))  # 设置y轴刻度标签的格式
     
     if write:
-        with open('Temdata.txt', 'w') as file:
+        with open('Temdata(Rh0='+str(Rh0*1e6)+'um).txt', 'w') as file:
             file.write('Initial conditions: Te0='+str(Te0/11604525.0062)+', Ti0='+str(Ti0/11604525.0062)+', rho0='+str(rho0/1e3)+', Rh0='+str(Rh0*1e6)+'\n')
             file.write('t (ps), Te (keV), Ti (keV), rho (g/cm^3), Rh (um)\n')
             for i in range(len(t)):
@@ -399,7 +399,7 @@ def draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh):
     num_ions = 10  # 离子数量
     r = Rh0/10  # 离子半径
     d = 2*r  # 离子间距
-    r = r*0.8  # 离子半径缩小一点，以便看到离子之间的间距
+    r = r*0.08  # 离子半径缩小一点，以便看到离子之间的间距
     for i in range(-num_ions//2, num_ions//2):
         for j in range(-num_ions//2, num_ions//2):
             x = i*d
@@ -424,14 +424,14 @@ def draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh):
         ax.set_xlim((-Rh0-1, Rh0+1))
         ax.set_ylim((-Rh0-1, Rh0+1))
         ax.set_aspect('equal')
-        circle1 = plt.Circle((0, 0), Rh[num], color=cmap1(Te[num]/np.max(Te)))
+        circle1 = plt.Circle((0, 0), Rh[num], color=cmap1(Te[num]/np.max(Ti)))
         ax.add_artist(circle1)
         for ion in ions:
-            ion.set_radius(Rh[num]/10*0.8)
+            ion.set_radius(r)
             ion.set_color(cmap2(Ti[num]/np.max(Ti)))
             ax.add_artist(ion)
         # ax.set_title(f'Te={Te[num]}, Ti={Ti[num]}, rho={rho[num]}, Rh={Rh[num]}')
-        ax.set_title(f'Te0={Te[num]}, Ti0={Ti[num]}, rho0={rho[num]:.1f}, Rh0={Rh[num]:.1f}')
+        ax.set_title(f'Te0={Te[num]:.1f}, Ti0={Ti[num]:.1f}, rho0={rho[num]:.1f}, Rh0={Rh[num]:.1f}')
 
     # 创建动画
     ani = FuncAnimation(fig, update, frames=len(t), repeat=False)
@@ -598,6 +598,7 @@ def Insight(th, rhohrh,f):
             ax1 = axs[i]
             ax2 = ax1.twinx()
             Simulate(ax1, ax2,f,'-', rhohrh/rh, rh, th, plot=True, write=True)
+            ax1.set_title(f'rho:{rhohrh/rh/1000:.1f}g/cm$^3$, rh: {rh*1e6:.1f}$\mu$ m\n th: {th/11604525.0062:.1f}keV, rhohrh: {rhohrh/10:.1f}g/cm$^2$')  # 设置子图的标题
     else:
         fig, ax1 = plt.subplots()  # 创建一个2行5列的子图网格 
         ax2 = ax1.twinx()
