@@ -11,6 +11,9 @@ import time
 import matplotlib.ticker as ticker
 from matplotlib.animation import FuncAnimation
 import matplotlib.cm as cm
+import ImageMagic
+from matplotlib.colors import Normalize
+# matplotlib.rcParams['animation.convert_path'] = 'C:/Windows/System32/convert.exe'  # 替换为你的ImageMagick的路径
 # import warnings
 
 # # 将运行时警告转换为错误
@@ -117,7 +120,8 @@ def Uh(Te, Ti, rho):
         return 0
     if not isobaric:
         th = Th(Te,Ti)
-        return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
+        return (3/4*GammaB*th*rho/Rhoc)**(1/2)
+    # *4*10**(-15)
     # th = Th(Te,Ti)
     # return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
 
@@ -211,7 +215,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
     # rho0 = 120*10**3 # g/cm^3
     # Rh0 = 30*10**(-6) # cm rho0*rh0=3.6
     y0 = [Te0, Ti0, rho0, Rh0]
-    t = np.linspace(0, 50*10**(-12), 1000)
+    t = np.linspace(0, 100*10**(-12), 1000)
     # Y0 = [Te0, Ti0, rho0, Rh0]
     # tt = t[1]-t[0]
     # Y =[]
@@ -246,6 +250,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
     We = []
     Wme = []
     Wmi = []
+    th = [Th(y[i,0],y[i,1]) for i in range(len(y[:,0]))]
     for tt in range(len(t)):
         info = printall(Y,tt)
         Walpha.append(np.abs(info[0]))
@@ -281,6 +286,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
         
         ax2.plot(t, y[:,0], label='Te,f='+str(f),linestyle=c,color=colors[6])
         ax2.plot(t, y[:,1], label='Ti,f='+str(f),linestyle=c,color=colors[7])
+        ax2.plot(t, th, label='Th,f='+str(f),linestyle=c,color=colors[8])
         # ax2.plot(t, y[:,2], label='rho,f='+str(f),linestyle=c,color=colors[8])
         # ax2.plot(t, y[:,3], label='Rh,f='+str(f),linestyle=c,color=colors[6])
         ax2.set_ylabel('Ti/Te')
@@ -296,7 +302,8 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
             file.write('t (ps), Te (keV), Ti (keV), rho (g/cm^3), Rh (um)\n')
             for i in range(len(t)):
                 file.write(f'{t[i]}, {Y[i,0]/11604525.0062}, {Y[i,1]/11604525.0062}, {Y[i,2]/1e3}, {Y[i,3]*1e6}\n')
-
+        global filename
+        filename = 'Temdata(Rh0='+str(Rh0*1e6)+'um).txt'
     # 显示图例
     
     # plt.plot(t, Wr, label='Wr,f='+str(f),linestyle=':',color=c)
@@ -319,7 +326,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
     # plt.show()
 
 def read_temdata():
-    with open('Temdata.txt', 'r') as file:
+    with open(filename, 'r') as file:
         lines = file.readlines()
 
     # 读取并解析第一行
@@ -345,46 +352,11 @@ def read_temdata():
 
     return Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh
 
-# def draw_figure(Te0, Ti0, rho0, Rh0):
-#     fig, ax = plt.subplots()
-
-#     # 设置坐标轴的背景颜色为淡蓝色，表示冷燃料
-#     ax.set_facecolor('lightblue')
-
-#     # 画一个半径为Rh的圆，表示热斑
-#     circle1 = plt.Circle((0, 0), Rh0, color='darkblue')
-#     ax.add_artist(circle1)
-
-#     # 在热斑上画几个小圆，表示离子
-#     ions = []
-#     num_ions = 10  # 离子数量
-#     r = Rh0/10  # 离子半径
-#     d = 2*r  # 离子间距
-#     r = r*0.8  # 离子半径缩小一点，以便看到离子之间的间距
-#     for i in range(-num_ions//2, num_ions//2):
-#         for j in range(-num_ions//2, num_ions//2):
-#             x = i*d
-#             y = j*d
-#             if np.hypot(x, y) < Rh0 - r:  # 确保离子在热斑内部
-#                 ion = plt.Circle((x, y), r, color='darkred')
-#                 ions.append(ion)
-#                 ax.add_artist(ion)
-
-#     # 设置标题
-#     ax.set_title(f'Te0={Te0}, Ti0={Ti0}, rho0={rho0}, Rh0={Rh0}')
-
-#     # 设置坐标轴的范围和比例
-#     ax.set_xlim((-Rh0-1, Rh0+1))
-#     ax.set_ylim((-Rh0-1, Rh0+1))
-#     ax.set_aspect('equal')
-
-#     plt.show()
-
 def draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh):
     fig, ax = plt.subplots()
 
     # 设置坐标轴的背景颜色为淡蓝色，表示冷燃料
-    ax.set_facecolor('lightblue')
+    # ax.set_facecolor('white')
 
     # 定义colormap
     cmap1 = cm.get_cmap('coolwarm')
@@ -399,7 +371,7 @@ def draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh):
     num_ions = 10  # 离子数量
     r = Rh0/10  # 离子半径
     d = 2*r  # 离子间距
-    r = r*0.08  # 离子半径缩小一点，以便看到离子之间的间距
+    r = r*0.5  # 离子半径缩小一点，以便看到离子之间的间距
     for i in range(-num_ions//2, num_ions//2):
         for j in range(-num_ions//2, num_ions//2):
             x = i*d
@@ -413,28 +385,32 @@ def draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh):
     ax.set_title(f'Te0={Te0}, Ti0={Ti0}, rho0={rho0}, Rh0={Rh0}')
 
     # 设置坐标轴的范围和比例
-    ax.set_xlim((-Rh0-1, Rh0+1))
-    ax.set_ylim((-Rh0-1, Rh0+1))
+    ax.set_xlim((-max(Rh), max(Rh)))
+    ax.set_ylim((-max(Rh), max(Rh)))
     ax.set_aspect('equal')
 
     # 更新函数
+    # 更新函数
     def update(num):
         ax.clear()
-        ax.set_facecolor('lightblue')
-        ax.set_xlim((-Rh0-1, Rh0+1))
-        ax.set_ylim((-Rh0-1, Rh0+1))
+        ax.set_xlim((-max(Rh), max(Rh)))
+        ax.set_ylim((-max(Rh), max(Rh)))
         ax.set_aspect('equal')
         circle1 = plt.Circle((0, 0), Rh[num], color=cmap1(Te[num]/np.max(Ti)))
         ax.add_artist(circle1)
-        for ion in ions:
-            ion.set_radius(r)
-            ion.set_color(cmap2(Ti[num]/np.max(Ti)))
-            ax.add_artist(ion)
-        # ax.set_title(f'Te={Te[num]}, Ti={Ti[num]}, rho={rho[num]}, Rh={Rh[num]}')
-        ax.set_title(f'Te0={Te[num]:.1f}, Ti0={Ti[num]:.1f}, rho0={rho[num]:.1f}, Rh0={Rh[num]:.1f}')
-
+        for i in range(num_ions):
+            for j in range(num_ions):
+                x = (i - num_ions//2) * d * Rh[num] / Rh0
+                y = (j - num_ions//2) * d * Rh[num] / Rh0
+                if np.hypot(x, y) < Rh[num] - r:  # 确保离子在热斑内部
+                    ion = plt.Circle((x, y), r * Rh[num] / Rh0, color=cmap2(Ti[num]/np.max(Ti)))
+                    ax.add_artist(ion)
+        ax.set_title(f'Te={Te[num]:.1f}keV, Ti={Ti[num]:.1f}keV, rho={rho[num]:.1f}g/cm$^3$, Rh={Rh[num]:.1f}$\mu$m')
     # 创建动画
-    ani = FuncAnimation(fig, update, frames=len(t), repeat=False)
+    ani = FuncAnimation(fig, update, frames=len(t), repeat=False, interval=10)
+
+    # 保存为gif
+    ani.save('animation.gif')
 
     plt.show()
 
@@ -494,38 +470,48 @@ def max_derivative_change(points):
     return np.max(changes)
 
 def Is_ignite(Y):
-    Temp_up = False
-    Smooth = True
-    for i in range(2):
-        if not Is_smooth(Y[:,i]):
-            Smooth = False
-        if Y[-1,i]>5*11604525.0062:
-            if Y[-1,i]>Y[-2,i] or np.abs(Y[-1,i]-Y[-2,i])/Y[-1,i]<0.01:
-                Temp_up = True
-    # print(Temp_up, Smooth)
-    if Temp_up and Smooth:
-        delta_T = [np.abs(Y[i,0]-Y[i,1]) for i in range(len(Y[:,0]))]
-        min_value = min(delta_T)
-        equibllrium = delta_T.index(min_value)
-        sample_Te = [Y[i+equibllrium,0] for i in range(len(Y[:,0])-equibllrium)]
-        sample_Ti = [Y[i+equibllrium,1] for i in range(len(Y[:,1])-equibllrium)]
-        if len(sample_Te)<5 or len(sample_Ti)<5:
+    if not isobaric:
+        Temp_up = False
+        Smooth = True
+        for i in range(2):
+            if not Is_smooth(Y[:,i]):
+                Smooth = False
+            if Y[-1,i]>5*11604525.0062:
+                if Y[-1,i]>Y[-2,i] or np.abs(Y[-1,i]-Y[-2,i])/Y[-1,i]<0.01:
+                    Temp_up = True
+        # print(Temp_up, Smooth)
+        if Temp_up and Smooth:
+            delta_T = [np.abs(Y[i,0]-Y[i,1]) for i in range(len(Y[:,0]))]
+            min_value = min(delta_T)
+            equibllrium = delta_T.index(min_value)
+            sample_Te = [Y[i+equibllrium,0] for i in range(len(Y[:,0])-equibllrium)]
+            sample_Ti = [Y[i+equibllrium,1] for i in range(len(Y[:,1])-equibllrium)]
+            if len(sample_Te)<5 or len(sample_Ti)<5:
+                return False
+            first_derivative_e = np.gradient(sample_Te)
+            second_derivative_e = np.gradient(first_derivative_e)
+            first_derivative_i = np.gradient(sample_Ti)
+            second_derivative_i = np.gradient(first_derivative_i)
+            count = 0
+            for value in second_derivative_i:
+                if value > 0:
+                    count += 1
+                    if count >= 5:
+                        return True
+                else:
+                    count = 0
             return False
-        first_derivative_e = np.gradient(sample_Te)
-        second_derivative_e = np.gradient(first_derivative_e)
-        first_derivative_i = np.gradient(sample_Ti)
-        second_derivative_i = np.gradient(first_derivative_i)
-        count = 0
-        for value in second_derivative_i:
-            if value > 0:
-                count += 1
-                if count >= 5:
-                    return True
-            else:
-                count = 0
-        return False
+        else:
+            return False
     else:
-        return False
+        th = [Th(Y[i,0],Y[i,1]) for i in range(len(Y[:,0]))]
+        first_derivative_e = np.gradient(th)
+        second_derivative_e = np.gradient(first_derivative_e)
+        for i in range(len(second_derivative_e)):
+            if second_derivative_e[i] > 0:
+                if first_derivative_e[i] > 0:
+                    if Y[i,0]>Y[0,0]:
+                        return True
     
 
 # Plot the results
@@ -613,6 +599,6 @@ isobaric = False
 # Plot()
 # np.seterr(all='ignore')
 # Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 100), np.linspace(1*11604525.0062, 30*11604525.0062, 1000), 1)
-# Insight(20*11604525.0062, 1.5*10,0.8)
+Insight(7*11604525.0062, 1.2*10,1.2)
 Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh = read_temdata()
 draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh)

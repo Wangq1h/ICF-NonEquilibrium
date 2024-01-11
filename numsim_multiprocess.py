@@ -117,7 +117,7 @@ def Uh(Te, Ti, rho):
         return 0
     if not isobaric:
         th = Th(Te,Ti)
-        return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
+        return (3/4*GammaB*th*rho/Rhoc)**(1/2)
     # th = Th(Te,Ti)
     # return (3/4*GammaB*th*rho/Rhoc)**(1/2)*4*10**(-15)
 
@@ -367,38 +367,48 @@ def max_derivative_change(points):
     return np.max(changes)
 
 def Is_ignite(Y):
-    Temp_up = False
-    Smooth = True
-    for i in range(2):
-        if not Is_smooth(Y[:,i]):
-            Smooth = False
-        if Y[-1,i]>5*11604525.0062:
-            if Y[-1,i]>Y[-2,i] or np.abs(Y[-1,i]-Y[-2,i])/Y[-1,i]<0.01:
-                Temp_up = True
-    # print(Temp_up, Smooth)
-    if Temp_up and Smooth:
-        delta_T = [np.abs(Y[i,0]-Y[i,1]) for i in range(len(Y[:,0]))]
-        min_value = min(delta_T)
-        equibllrium = delta_T.index(min_value)
-        sample_Te = [Y[i+equibllrium,0] for i in range(len(Y[:,0])-equibllrium)]
-        sample_Ti = [Y[i+equibllrium,1] for i in range(len(Y[:,1])-equibllrium)]
-        if len(sample_Te)<5 or len(sample_Ti)<5:
+    if not isobaric:
+        Temp_up = False
+        Smooth = True
+        for i in range(2):
+            if not Is_smooth(Y[:,i]):
+                Smooth = False
+            if Y[-1,i]>5*11604525.0062:
+                if Y[-1,i]>Y[-2,i] or np.abs(Y[-1,i]-Y[-2,i])/Y[-1,i]<0.01:
+                    Temp_up = True
+        # print(Temp_up, Smooth)
+        if Temp_up and Smooth:
+            delta_T = [np.abs(Y[i,0]-Y[i,1]) for i in range(len(Y[:,0]))]
+            min_value = min(delta_T)
+            equibllrium = delta_T.index(min_value)
+            sample_Te = [Y[i+equibllrium,0] for i in range(len(Y[:,0])-equibllrium)]
+            sample_Ti = [Y[i+equibllrium,1] for i in range(len(Y[:,1])-equibllrium)]
+            if len(sample_Te)<5 or len(sample_Ti)<5:
+                return False
+            first_derivative_e = np.gradient(sample_Te)
+            second_derivative_e = np.gradient(first_derivative_e)
+            first_derivative_i = np.gradient(sample_Ti)
+            second_derivative_i = np.gradient(first_derivative_i)
+            count = 0
+            for value in second_derivative_i:
+                if value > 0:
+                    count += 1
+                    if count >= 5:
+                        return True
+                else:
+                    count = 0
             return False
-        first_derivative_e = np.gradient(sample_Te)
-        second_derivative_e = np.gradient(first_derivative_e)
-        first_derivative_i = np.gradient(sample_Ti)
-        second_derivative_i = np.gradient(first_derivative_i)
-        count = 0
-        for value in second_derivative_i:
-            if value > 0:
-                count += 1
-                if count >= 5:
-                    return True
-            else:
-                count = 0
-        return False
+        else:
+            return False
     else:
-        return False
+        th = [Th(Y[i,0],Y[i,1]) for i in range(len(Y[:,0]))]
+        first_derivative_e = np.gradient(th)
+        second_derivative_e = np.gradient(first_derivative_e)
+        for i in range(len(second_derivative_e)):
+            if second_derivative_e[i] > 0:
+                if first_derivative_e[i] > 0:
+                    if Y[i,0]>Y[0,0]:
+                        return True
     
 
 # Plot the results
@@ -525,16 +535,16 @@ def Insight(th, rhohrh,f):
     plt.show()
             
 
-isobaric = True
+isobaric = False
 # Plot()
 # np.seterr(all='ignore')
 def main():
     # 这里是你的主程序
     global isobaric
-    isobaric = True
-    Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 0.8)
-    Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1)
-    Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1.2)
+    # isobaric = True
+    # Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 0.8)
+    # Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1)
+    # Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1.2)
     isobaric = False
     Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 0.8)
     Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1)
