@@ -9,6 +9,8 @@ import sys
 from tqdm import tqdm
 import time
 import matplotlib.ticker as ticker
+from matplotlib.animation import FuncAnimation
+import matplotlib.cm as cm
 # import warnings
 
 # # 将运行时警告转换为错误
@@ -293,7 +295,8 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
             file.write('Initial conditions: Te0='+str(Te0/11604525.0062)+', Ti0='+str(Ti0/11604525.0062)+', rho0='+str(rho0/1e3)+', Rh0='+str(Rh0*1e6)+'\n')
             file.write('t (ps), Te (keV), Ti (keV), rho (g/cm^3), Rh (um)\n')
             for i in range(len(t)):
-                file.write(f'{t[i]}, {y[i,0]/11604525.0062}, {y[i,1]/11604525.0062}, {y[i,2]/1e3}, {y[i,3]*1e6}\n')
+                file.write(f'{t[i]}, {Y[i,0]/11604525.0062}, {Y[i,1]/11604525.0062}, {Y[i,2]/1e3}, {Y[i,3]*1e6}\n')
+
     # 显示图例
     
     # plt.plot(t, Wr, label='Wr,f='+str(f),linestyle=':',color=c)
@@ -314,6 +317,126 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
     # plt.rc('legend', fontsize=6) 
     # plt.yscale('log')
     # plt.show()
+
+def read_temdata():
+    with open('Temdata.txt', 'r') as file:
+        lines = file.readlines()
+
+    # 读取并解析第一行
+    initial_conditions = lines[0].split(': ')[1].split(', ')
+    Te0 = float(initial_conditions[0].split('=')[1])
+    Ti0 = float(initial_conditions[1].split('=')[1])
+    rho0 = float(initial_conditions[2].split('=')[1])
+    Rh0 = float(initial_conditions[3].split('=')[1])
+
+    # 读取并解析其余行
+    t = []
+    Te = []
+    Ti = []
+    rho = []
+    Rh = []
+    for line in lines[2:]:
+        data = line.split(', ')
+        t.append(float(data[0]))
+        Te.append(float(data[1]))
+        Ti.append(float(data[2]))
+        rho.append(float(data[3]))
+        Rh.append(float(data[4]))
+
+    return Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh
+
+# def draw_figure(Te0, Ti0, rho0, Rh0):
+#     fig, ax = plt.subplots()
+
+#     # 设置坐标轴的背景颜色为淡蓝色，表示冷燃料
+#     ax.set_facecolor('lightblue')
+
+#     # 画一个半径为Rh的圆，表示热斑
+#     circle1 = plt.Circle((0, 0), Rh0, color='darkblue')
+#     ax.add_artist(circle1)
+
+#     # 在热斑上画几个小圆，表示离子
+#     ions = []
+#     num_ions = 10  # 离子数量
+#     r = Rh0/10  # 离子半径
+#     d = 2*r  # 离子间距
+#     r = r*0.8  # 离子半径缩小一点，以便看到离子之间的间距
+#     for i in range(-num_ions//2, num_ions//2):
+#         for j in range(-num_ions//2, num_ions//2):
+#             x = i*d
+#             y = j*d
+#             if np.hypot(x, y) < Rh0 - r:  # 确保离子在热斑内部
+#                 ion = plt.Circle((x, y), r, color='darkred')
+#                 ions.append(ion)
+#                 ax.add_artist(ion)
+
+#     # 设置标题
+#     ax.set_title(f'Te0={Te0}, Ti0={Ti0}, rho0={rho0}, Rh0={Rh0}')
+
+#     # 设置坐标轴的范围和比例
+#     ax.set_xlim((-Rh0-1, Rh0+1))
+#     ax.set_ylim((-Rh0-1, Rh0+1))
+#     ax.set_aspect('equal')
+
+#     plt.show()
+
+def draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh):
+    fig, ax = plt.subplots()
+
+    # 设置坐标轴的背景颜色为淡蓝色，表示冷燃料
+    ax.set_facecolor('lightblue')
+
+    # 定义colormap
+    cmap1 = cm.get_cmap('coolwarm')
+    cmap2 = cm.get_cmap('coolwarm')
+
+    # 画一个半径为Rh的圆，表示热斑
+    circle1 = plt.Circle((0, 0), Rh0, color=cmap1(Te0/np.max(Te)))
+    ax.add_artist(circle1)
+
+    # 在热斑上画几个小圆，表示离子
+    ions = []
+    num_ions = 10  # 离子数量
+    r = Rh0/10  # 离子半径
+    d = 2*r  # 离子间距
+    r = r*0.8  # 离子半径缩小一点，以便看到离子之间的间距
+    for i in range(-num_ions//2, num_ions//2):
+        for j in range(-num_ions//2, num_ions//2):
+            x = i*d
+            y = j*d
+            if np.hypot(x, y) < Rh0 - r:  # 确保离子在热斑内部
+                ion = plt.Circle((x, y), r, color=cmap2(Ti0/np.max(Ti)))
+                ions.append(ion)
+                ax.add_artist(ion)
+
+    # 设置标题
+    ax.set_title(f'Te0={Te0}, Ti0={Ti0}, rho0={rho0}, Rh0={Rh0}')
+
+    # 设置坐标轴的范围和比例
+    ax.set_xlim((-Rh0-1, Rh0+1))
+    ax.set_ylim((-Rh0-1, Rh0+1))
+    ax.set_aspect('equal')
+
+    # 更新函数
+    def update(num):
+        ax.clear()
+        ax.set_facecolor('lightblue')
+        ax.set_xlim((-Rh0-1, Rh0+1))
+        ax.set_ylim((-Rh0-1, Rh0+1))
+        ax.set_aspect('equal')
+        circle1 = plt.Circle((0, 0), Rh[num], color=cmap1(Te[num]/np.max(Te)))
+        ax.add_artist(circle1)
+        for ion in ions:
+            ion.set_radius(Rh[num]/10*0.8)
+            ion.set_color(cmap2(Ti[num]/np.max(Ti)))
+            ax.add_artist(ion)
+        # ax.set_title(f'Te={Te[num]}, Ti={Ti[num]}, rho={rho[num]}, Rh={Rh[num]}')
+        ax.set_title(f'Te0={Te[num]}, Ti0={Ti[num]}, rho0={rho[num]:.1f}, Rh0={Rh[num]:.1f}')
+
+    # 创建动画
+    ani = FuncAnimation(fig, update, frames=len(t), repeat=False)
+
+    plt.show()
 
 #Lawson Criterion
 def Lawson(th, rhoh, rh):
@@ -489,4 +612,6 @@ isobaric = False
 # Plot()
 # np.seterr(all='ignore')
 # Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 100), np.linspace(1*11604525.0062, 30*11604525.0062, 1000), 1)
-Insight(20*11604525.0062, 1.5*10,0.8)
+# Insight(20*11604525.0062, 1.5*10,0.8)
+Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh = read_temdata()
+draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh)

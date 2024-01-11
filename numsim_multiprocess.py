@@ -500,7 +500,7 @@ def Scan(RhohRh, Th, f):
         print("Simulation finished")
     with open(str(isobaric)+'Ignit_success_f='+str(f)+'.txt', 'w') as file:
         for item in Ignit_success:
-            file.write(f'{item[0]}, {item[1]}\n')
+            file.write(f'{item[0]} {item[1]}\n')
     print("Waiting for all processes to finish...")
 
     plt.plot([i[0] for i in Ignit_success], [i[1] for i in Ignit_success], 'o')
