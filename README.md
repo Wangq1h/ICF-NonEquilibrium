@@ -35,6 +35,7 @@ $$
 同时，等容模型固定初值冷燃料和热斑的密度相等。
 ## 参考图
 ![Alt text](image-4.png)
+![Alt text](8af4791aa388f42f2c1da7e9da253cc.png)
 ## Lawson判据
 来自Atezni:
 $$

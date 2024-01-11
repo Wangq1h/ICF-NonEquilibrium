@@ -198,7 +198,7 @@ def model(y, t):
 
 
 # Simulate the model
-def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062, plot= True):
+def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062, plot= True, write=False):
     colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'orange', 'purple']
     # Set up the initial conditions
     # Th0 = 8*11604525.0062 
@@ -209,7 +209,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
     # rho0 = 120*10**3 # g/cm^3
     # Rh0 = 30*10**(-6) # cm rho0*rh0=3.6
     y0 = [Te0, Ti0, rho0, Rh0]
-    t = np.linspace(0, 25*10**(-12), 1000)
+    t = np.linspace(0, 50*10**(-12), 1000)
     # Y0 = [Te0, Ti0, rho0, Rh0]
     # tt = t[1]-t[0]
     # Y =[]
@@ -287,7 +287,13 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
         # ax2.yaxis.set_major_locator(ticker.MaxNLocator(3))  # 限制y轴刻度的数量
         # ax2.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: '{:.1e}'.format(x)))  # 设置x轴刻度标签的格式
         # ax2.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: '{:.1e}'.format(x)))  # 设置y轴刻度标签的格式
-
+    
+    if write:
+        with open('Temdata.txt', 'w') as file:
+            file.write('Initial conditions: Te0='+str(Te0/11604525.0062)+', Ti0='+str(Ti0/11604525.0062)+', rho0='+str(rho0/1e3)+', Rh0='+str(Rh0*1e6)+'\n')
+            file.write('t (ps), Te (keV), Ti (keV), rho (g/cm^3), Rh (um)\n')
+            for i in range(len(t)):
+                file.write(f'{t[i]}, {y[i,0]/11604525.0062}, {y[i,1]/11604525.0062}, {y[i,2]/1e3}, {y[i,3]*1e6}\n')
     # 显示图例
     
     # plt.plot(t, Wr, label='Wr,f='+str(f),linestyle=':',color=c)
@@ -459,19 +465,21 @@ def Scan(RhohRh, Th, f):
     plt.show()
 
 def Insight(th, rhohrh,f):
-    fig, axs = plt.subplots(2, 5, figsize=(15, 6))  # 创建一个2行5列的子图网格
-    axs = axs.flatten()  # 将子图网格转换为一维数组，以便我们可以在循环中使用它
-    total = 10
-    pbar = tqdm(total=total, desc="Processing", ncols=80)
-    for i, rh in enumerate(np.linspace(10**(-6), 10**(-4), total)):
-        pbar.update(1)
-        ax1 = axs[i]
+    if isobaric:
+        fig, axs = plt.subplots(2, 5, figsize=(15, 6))  # 创建一个2行5列的子图网格
+        axs = axs.flatten()  # 将子图网格转换为一维数组，以便我们可以在循环中使用它
+        total = 10
+        pbar = tqdm(total=total, desc="Processing", ncols=80)
+        for i, rh in enumerate(np.linspace(10**(-6), 10**(-4), total)):
+            pbar.update(1)
+            ax1 = axs[i]
+            ax2 = ax1.twinx()
+            Simulate(ax1, ax2,f,'-', rhohrh/rh, rh, th, plot=True, write=True)
+    else:
+        fig, ax1 = plt.subplots()  # 创建一个2行5列的子图网格 
         ax2 = ax1.twinx()
-        if isobaric:
-            Simulate(ax1, ax2,f,'-', rhohrh/rh, rh, th, plot=True)
-        else:
-            Simulate(ax1, ax2,f,'-', Rhoc, rhohrh/Rhoc, th, plot=True)
-        ax1.set_title(f'rho: {rhohrh/rh/1000:.1f}g/cm$^3$, rh: {rh*1e6:.1f}$\mu$ m\n th: {th/11604525.0062:.1f}keV, rhohrh: {rhohrh/10:.1f}g/cm$^2$')  # 设置子图的标题
+        Simulate(ax1, ax2,f,'-', Rhoc, rhohrh/Rhoc, th, plot=True, write=True)
+        ax1.set_title(f'rho: {Rhoc/1000:.1f}g/cm$^3$, rh: {rhohrh/Rhoc*1e6:.1f}$\mu$ m\n th: {th/11604525.0062:.1f}keV, rhohrh: {rhohrh/10:.1f}g/cm$^2$')  # 设置子图的标题
     fig.legend(bbox_to_anchor=(0.5, -0.05), loc='upper center', ncol=5)  # 创建图例
     plt.tight_layout()  # 调整子图的位置，以确保它们不会重叠
     plt.show()
