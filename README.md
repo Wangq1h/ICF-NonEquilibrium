@@ -40,3 +40,16 @@ $$
 ![Alt text](%E5%9B%BE%E7%89%872.gif)
 ## 热斑的非平衡能量演化
 ![Alt text](image-6.png)
+![Alt text](image-8.png)
+## 分析与讨论
+$$
+    \frac{d\Delta T}{dt}\propto W_\alpha f-2W_{ie}+W_r+W_e,\Delta T=T_i-T_e
+$$
+注意到alpha粒子加热因子之差$f=\frac{T_e-32}{T_e+32}$
+
+当电子温度达到32KeV附近时，alpha粒子加热对电子和离子的效果反转，使得离子-电子温度出现分叉，不再平衡。注意到alpha粒子加热因子之差。
+
+非平衡过程中，组分间不平衡，由于其他加热机制对各组分的独立性，加热机制最终使得各组分温度分离。
+![Alt text](14f650bbaab69b4dd5ee331e94f20e2.png)
+* 非平衡参数f越大（即离子温度越高），点火温度越低。
+* 相比等容模型，等压模型具有更高的点火裕度。
