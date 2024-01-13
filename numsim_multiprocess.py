@@ -513,8 +513,8 @@ def Scan(RhohRh, Th, f):
             file.write(f'{item[0]} {item[1]}\n')
     print("Waiting for all processes to finish...")
 
-    plt.plot([i[0] for i in Ignit_success], [i[1] for i in Ignit_success], 'o')
-    plt.show()
+    # plt.plot([i[0] for i in Ignit_success], [i[1] for i in Ignit_success], 'o')
+    # plt.show()
 
 def Insight(th, rhohrh,f):
     fig, axs = plt.subplots(2, 5, figsize=(15, 6))  # 创建一个2行5列的子图网格
@@ -541,14 +541,14 @@ isobaric = False
 def main():
     # 这里是你的主程序
     global isobaric
-    # isobaric = True
-    # Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 0.8)
-    # Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1)
-    # Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1.2)
+    isobaric = True
+    Scan(np.linspace(0.01*10**(1), 0.1*10**(1), 20), np.linspace(5*11604525.0062, 100*11604525.0062, 1000), 0.8)
+    Scan(np.linspace(0.01*10**(1), 0.1*10**(1), 20), np.linspace(5*11604525.0062, 100*11604525.0062, 1000), 1)
+    Scan(np.linspace(0.01*10**(1), 0.1*10**(1), 20), np.linspace(5*11604525.0062, 100*11604525.0062, 1000), 1.2)
     isobaric = False
-    Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 0.8)
-    Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1)
-    Scan(np.linspace(0.01*10**(1), 1.5*10**(1), 20), np.linspace(1*11604525.0062, 20*11604525.0062, 200), 1.2)
+    Scan(np.linspace(0.01*10**(1), 0.1*10**(1), 20), np.linspace(5*11604525.0062, 100*11604525.0062, 1000), 0.8)
+    Scan(np.linspace(0.01*10**(1), 0.1*10**(1), 20), np.linspace(5*11604525.0062, 100*11604525.0062, 1000), 1)
+    Scan(np.linspace(0.01*10**(1), 0.1*10**(1), 20), np.linspace(5*11604525.0062, 100*11604525.0062, 1000), 1.2)
 
 if __name__ == '__main__':
     main()

@@ -11,7 +11,7 @@ import time
 import matplotlib.ticker as ticker
 from matplotlib.animation import FuncAnimation
 import matplotlib.cm as cm
-import ImageMagic
+# import ImageMagic
 from matplotlib.colors import Normalize
 # matplotlib.rcParams['animation.convert_path'] = 'C:/Windows/System32/convert.exe'  # 替换为你的ImageMagick的路径
 # import warnings
@@ -41,7 +41,7 @@ def Th(Te,Ti):
     return (Te+Ti)/2 
 
 def SigmaV(Ti):
-    return 9.1*10**(-16)*np.exp(-0.572*np.abs(np.log(Ti/(64.2*11604525.0062)))**(2.4))*10**(-6)
+    return 9.1*10**(-16)*np.exp(-0.572*np.abs(np.log(Ti/(64.2*11604525.0062)))**(2.13))*10**(-6)
 
 def Rhoe(rho):
     return 2*m_e*rho/(5*m_p+2*m_e) # g/cm^3
@@ -215,7 +215,7 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
     # rho0 = 120*10**3 # g/cm^3
     # Rh0 = 30*10**(-6) # cm rho0*rh0=3.6
     y0 = [Te0, Ti0, rho0, Rh0]
-    t = np.linspace(0, 100*10**(-12), 1000)
+    t = np.linspace(0, 50*10**(-12), 1000)
     # Y0 = [Te0, Ti0, rho0, Rh0]
     # tt = t[1]-t[0]
     # Y =[]
@@ -297,11 +297,11 @@ def Simulate(ax1, ax2, f,c, rho0=120*10**3, Rh0=30*10**(-6), Th0=8*11604525.0062
         # ax2.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: '{:.1e}'.format(x)))  # 设置y轴刻度标签的格式
     
     if write:
-        with open('Temdata(Rh0='+str(Rh0*1e6)+'um).txt', 'w') as file:
+        with open('Temdata(f='+str(f)+').txt', 'w') as file:
             file.write('Initial conditions: Te0='+str(Te0/11604525.0062)+', Ti0='+str(Ti0/11604525.0062)+', rho0='+str(rho0/1e3)+', Rh0='+str(Rh0*1e6)+'\n')
             file.write('t (ps), Te (keV), Ti (keV), rho (g/cm^3), Rh (um)\n')
             for i in range(len(t)):
-                file.write(f'{t[i]}, {Y[i,0]/11604525.0062}, {Y[i,1]/11604525.0062}, {Y[i,2]/1e3}, {Y[i,3]*1e6}\n')
+                file.write(f'{t[i]}  {Y[i,0]/11604525.0062}  {Y[i,1]/11604525.0062}  {Y[i,2]/1e3}  {Y[i,3]*1e6}\n')
         global filename
         filename = 'Temdata(Rh0='+str(Rh0*1e6)+'um).txt'
     # 显示图例
@@ -410,7 +410,7 @@ def draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh):
     ani = FuncAnimation(fig, update, frames=len(t), repeat=False, interval=10)
 
     # 保存为gif
-    ani.save('animation.gif')
+    # ani.save('animation.gif')
 
     plt.show()
 
@@ -599,6 +599,6 @@ isobaric = False
 # Plot()
 # np.seterr(all='ignore')
 # Scan(np.linspace(0.1*10**(1), 1.5*10**(1), 100), np.linspace(1*11604525.0062, 30*11604525.0062, 1000), 1)
-Insight(7*11604525.0062, 1.2*10,1.2)
-Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh = read_temdata()
-draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh)
+Insight(5*11604525.0062, 1*10,1)
+# Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh = read_temdata()
+# draw_figure(Te0, Ti0, rho0, Rh0, t, Te, Ti, rho, Rh)
